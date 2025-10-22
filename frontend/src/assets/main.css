@@ -1,0 +1,7 @@
+@import "tailwindcss";
+/* @import "tailwindcss/colors"; */
+
+@theme {
+  --background-image-app: url("/img/1.jpg");
+  --colors-vtd-primary: #1e40af;
+}
