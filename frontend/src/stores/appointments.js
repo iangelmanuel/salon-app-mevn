@@ -3,7 +3,8 @@ import { useRouter } from "vue-router"
 import { defineStore } from "pinia"
 
 import AppointmentAPI from "@/api/AppointmentAPI"
-import { convertToISO } from "@/helpers/date"
+import { convertToISO, convertToDDMMYYYY } from "@/helpers/date"
+import { useUserStore } from "@/stores/user"
 
 export const useAppointmentsStore = defineStore("appointments", () => {
   const services = ref([])
@@ -11,9 +12,11 @@ export const useAppointmentsStore = defineStore("appointments", () => {
   const hours = ref([])
   const time = ref("")
   const appointmentsByDate = ref([])
+  const appointmentId = ref("")
 
   const toast = inject("toast")
   const router = useRouter()
+  const user = useUserStore()
 
   onMounted(() => {
     const startHour = 10
@@ -30,7 +33,26 @@ export const useAppointmentsStore = defineStore("appointments", () => {
 
     const { data } = await AppointmentAPI.getByDate(date.value)
     appointmentsByDate.value = data
+
+    if (appointmentId.value) {
+      appointmentsByDate.value = data.filter(
+        (appointment) => appointment._id !== appointmentId.value
+      )
+
+      time.value = data.filter(
+        (appointment) => appointment._id === appointmentId.value
+      )[0].time
+    } else {
+      appointmentsByDate.value = data
+    }
   })
+
+  const setSelectedAppointment = (appointment) => {
+    services.value = appointment.services
+    date.value = convertToDDMMYYYY(appointment.date)
+    time.value = appointment.time
+    appointmentId.value = appointment._id
+  }
 
   const onServiceSelected = (service) => {
     const servicesIsDuplicated = services.value.some(
@@ -51,7 +73,7 @@ export const useAppointmentsStore = defineStore("appointments", () => {
     }
   }
 
-  const createAppointment = async () => {
+  const saveAppointment = async () => {
     const appointment = {
       services: services.value.map((service) => service._id),
       date: convertToISO(date.value),
@@ -59,23 +81,63 @@ export const useAppointmentsStore = defineStore("appointments", () => {
       totalAmount: totalAmount.value
     }
 
-    try {
-      const { data } = await AppointmentAPI.create(appointment)
-      toast.open({
-        type: "success",
-        message: data.msg
-      })
-      clearAppointmentStore()
-      router.push({ name: "my-appointments" })
-    } catch (error) {
-      console.log(error)
+    if (appointmentId.value) {
+      try {
+        const { data } = await AppointmentAPI.update(
+          appointmentId.value,
+          appointment
+        )
+        toast.open({
+          type: "success",
+          message: data.msg
+        })
+      } catch (error) {
+        console.log(error)
+      }
+    } else {
+      try {
+        const { data } = await AppointmentAPI.create(appointment)
+        toast.open({
+          type: "success",
+          message: data.msg
+        })
+      } catch (error) {
+        console.log(error)
+      }
     }
+
+    clearAppointmentStore()
+    user.getUserAppointments()
+    router.push({ name: "my-appointments" })
   }
 
   function clearAppointmentStore() {
+    appointmentId.value = ""
     services.value = []
     date.value = ""
     time.value = ""
+  }
+
+  const cancelAppointment = async (id) => {
+    if (confirm("¿Estás seguro de que deseas cancelar esta cita?")) {
+      try {
+        const { data } = await AppointmentAPI.delete(id)
+
+        toast.open({
+          type: "success",
+          message: data.msg
+        })
+
+        user.userAppointments = user.userAppointments.filter(
+          (appointment) => appointment._id !== id
+        )
+      } catch (error) {
+        toast.open({
+          type: "error",
+          message: error.response.data.msg
+        })
+      }
+    }
   }
 
   const isServiceSelected = computed(() => {
@@ -115,7 +177,10 @@ export const useAppointmentsStore = defineStore("appointments", () => {
     isValidReservation,
     isDateSelected,
     disableTime,
+    setSelectedAppointment,
     onServiceSelected,
-    createAppointment
+    saveAppointment,
+    clearAppointmentStore,
+    cancelAppointment
   }
 })
