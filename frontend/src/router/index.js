@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from "vue-router"
 import AuthApi from "@/api/AuthApi"
 import HomeView from "../views/HomeView.vue"
 import AppointmentsLayout from "@/views/appointments/AppointmentsLayout.vue"
+import AdminLayout from "@/views/admin/AdminLayout.vue"
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -10,6 +11,19 @@ const router = createRouter({
       path: "/",
       name: "home",
       component: HomeView
+    },
+    {
+      path: "/admin",
+      name: "admin",
+      component: AdminLayout,
+      meta: { requiresAuth: true },
+      children: [
+        {
+          path: "",
+          name: "admin-view",
+          component: () => import("../views/admin/AdminViewView.vue")
+        }
+      ]
     },
     {
       path: "/reservaciones",
@@ -99,7 +113,27 @@ router.beforeEach(async (to, from, next) => {
 
   if (requiresAuth) {
     try {
-      await AuthApi.auth()
+      const { data } = await AuthApi.auth()
+
+      if (data.admin) {
+        next({ name: "admin" })
+      } else {
+        next()
+      }
+    } catch (error) {
+      next({ name: "login" })
+    }
+  } else {
+    next()
+  }
+})
+
+router.beforeEach(async (to, from, next) => {
+  const requiresAdmin = to.matched.some((url) => url.meta.requiresAuth)
+
+  if (requiresAdmin) {
+    try {
+      await AuthApi.admin()
       next()
     } catch (error) {
       next({ name: "login" })
