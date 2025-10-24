@@ -103,6 +103,22 @@ export const user = async (req, res) => {
   res.status(200).json({ user })
 }
 
+export const admin = async (req, res) => {
+  const { user } = req
+
+  if (!user) {
+    const error = new Error("User not found")
+    return res.status(404).json({ msg: error.message })
+  }
+
+  if (!user.admin) {
+    const error = new Error("Access denied: Admins only")
+    return res.status(403).json({ msg: error.message })
+  }
+
+  res.status(200).json({ user })
+}
+
 export const forgotPassword = async (req, res) => {
   const { email } = req.body
 
