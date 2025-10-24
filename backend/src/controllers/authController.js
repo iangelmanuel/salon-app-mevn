@@ -1,6 +1,8 @@
-import bcrypt from "bcrypt"
 import User from "../models/User.js"
-import { sendEmailVerification } from "../emails/authEmailService.js"
+import {
+  sendEmailVerification,
+  sendEmailPasswordReset
+} from "../emails/authEmailService.js"
 import { generateJWT } from "../utils/index.js"
 
 export const register = async (req, res) => {
@@ -99,4 +101,63 @@ export const user = async (req, res) => {
   }
 
   res.status(200).json({ user })
+}
+
+export const forgotPassword = async (req, res) => {
+  const { email } = req.body
+
+  const user = await User.findOne({ email })
+
+  if (!user) {
+    const error = new Error("User does not exist")
+    return res.status(404).json({ msg: error.message })
+  }
+
+  try {
+    user.token = crypto.randomUUID()
+    const result = await user.save()
+
+    await sendEmailPasswordReset({
+      name: result.name,
+      email: result.email,
+      token: result.token
+    })
+    res.status(200).json({ msg: "Token generated successfully" })
+  } catch (error) {
+    console.log(error)
+  }
+}
+
+export const verifyPasswordResetToken = async (req, res) => {
+  const { token } = req.params
+
+  const isValidToken = await User.findOne({ token })
+
+  if (!isValidToken) {
+    const error = new Error("Invalid token")
+    return res.status(401).json({ msg: error.message })
+  }
+
+  res.status(200).json({ msg: "Token is valid" })
+}
+
+export const updatePassword = async (req, res) => {
+  const { password } = req.body
+  const { token } = req.params
+
+  const user = await User.findOne({ token })
+
+  if (!user) {
+    const error = new Error("Invalid token")
+    return res.status(401).json({ msg: error.message })
+  }
+
+  try {
+    user.token = ""
+    user.password = password
+    await user.save()
+    res.status(200).json({ msg: "Password updated successfully" })
+  } catch (error) {
+    console.log(error)
+  }
 }

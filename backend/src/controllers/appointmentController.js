@@ -1,13 +1,27 @@
 import { parse, formatISO, startOfDay, endOfDay, isValid } from "date-fns"
 import Appointment from "../models/Appointment.js"
-import { validateObjectID, handleNotFoundError } from "../utils/index.js"
+import {
+  validateObjectID,
+  handleNotFoundError,
+  formatDate
+} from "../utils/index.js"
+import {
+  sendEmailCancelAppointment,
+  appointmentEmailService,
+  sendEmailUpdateAppointment
+} from "../emails/appointmentEmailService.js"
 
 export const createAppointment = async (req, res) => {
   try {
     const appointment = req.body
     appointment.user = req.user._id.toString()
     const newAppointment = new Appointment(appointment)
-    await newAppointment.save()
+    const result = await newAppointment.save()
+
+    await appointmentEmailService({
+      date: formatDate(result.date),
+      time: result.time
+    })
     res.status(201).json({ msg: "Appointment created successfully" })
   } catch (error) {
     console.log(error)
@@ -68,9 +82,16 @@ export const updateAppointment = async (req, res) => {
   appointment.date = date || appointment.date
   appointment.time = time || appointment.time
   appointment.services = services || appointment.services
+  appointment.totalAmount = totalAmount || appointment.totalAmount
 
   try {
-    const result = await appointment.save()
+    await appointment.save()
+
+    await sendEmailUpdateAppointment({
+      date: formatDate(appointment.date),
+      time: appointment.time
+    })
+
     res.status(200).json({ msg: "Appointment updated successfully" })
   } catch (error) {
     console.log(error)
@@ -94,7 +115,13 @@ export const deleteAppointment = async (req, res) => {
   }
 
   try {
-    await appointment.deleteOne()
+    const result = await appointment.deleteOne()
+
+    await sendEmailCancelAppointment({
+      date: formatDate(result.date),
+      time: result.time
+    })
+
     res.status(200).json({ msg: "Appointment deleted successfully" })
   } catch (error) {
     console.log(error)
