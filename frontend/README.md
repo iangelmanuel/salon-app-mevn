@@ -1,38 +1,60 @@
-# frontend
+# Frontend - Salon MEVN
 
-This template should help get you started developing with Vue 3 in Vite.
+Aplicacion SPA construida con Vue 3 y Vite para gestionar citas, autenticar usuarios y administrar servicios del salon.
 
-## Recommended IDE Setup
+## Stack destacado
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+- Vue 3 con Composition API.
+- Pinia para manejo de estado y Vue Router para rutas dinamicas.
+- Axios con interceptores para llamadas autenticadas.
+- Tailwind CSS y FormKit para UI y formularios.
 
-## Recommended Browser Setup
+## Requisitos previos
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+- Node.js 20 o superior.
+- pnpm 10 o superior.
 
-## Customize configuration
+## Instalacion
 
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
+```powershell
+cd frontend
 pnpm install
 ```
 
-### Compile and Hot-Reload for Development
+## Variables de entorno (`frontend/.env`)
 
-```sh
-pnpm dev
+| Variable       | Descripcion                                                     |
+| -------------- | --------------------------------------------------------------- |
+| `VITE_API_URL` | URL base del backend (por ejemplo `http://localhost:4000/api`). |
+
+## Scripts disponibles
+
+| Comando        | Descripcion                                    |
+| -------------- | ---------------------------------------------- |
+| `pnpm dev`     | Inicia Vite con hot reload en desarrollo.      |
+| `pnpm build`   | Genera la version optimizada para produccion.  |
+| `pnpm preview` | Sirve la carpeta `dist` para validar el build. |
+
+## Estructura principal
+
+```text
+src/
+  api/
+  components/
+  helpers/
+  lib/
+  router/
+  stores/
+  views/
 ```
 
-### Compile and Minify for Production
+- `api/` agrupa clientes de Axios para servicios, citas y autenticacion.
+- `stores/` define los modulos de Pinia que sincronizan datos con la API.
+- `views/` contiene las pantallas para usuarios finales y administradores.
+- `components/` reune piezas reutilizables como tarjetas de servicio y formularios.
 
-```sh
-pnpm build
-```
+## Flujos basicos
+
+1. Configura `VITE_API_URL` apuntando al backend (por ejemplo `http://localhost:4000/api`).
+2. Ejecuta `pnpm dev` y accede a la URL que imprime Vite.
+3. Usa las vistas de autenticacion para registrar o iniciar sesion y probar la gestion de citas.
